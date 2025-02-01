@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Блог</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+        }
+        .login-form, .register-form, .profile-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"], textarea, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .post {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .post h2 {
+            margin: 0;
+        }
+        .post p {
+            font-size: 14px;
+        }
+        .post .author {
+            font-size: 12px;
+            color: #888;
+        }
+        .add-post {
+            margin-top: 20px;
+        }
+        .add-post textarea {
+            height: 100px;
+        }
+        .profile {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .profile img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Добро пожаловать в блог</h1>
+    </header>
+
+    <div class="container">
+        <div id="content">
+            <!-- Контент будет загружаться сюда -->
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null; // Переменная для хранения текущего пользователя
+        let posts = JSON.parse(localStorage.getItem("posts")) || []; // Загружаем посты из LocalStorage
+        let users = JSON.parse(localStorage.getItem("users")) || []; // Загружаем пользователей из LocalStorage
+
+        // Функция для отображения всех постов
+        function renderPosts() {
+            const content = document.getElementById("content");
+            content.innerHTML = ""; // Очищаем контент
+
+            if (!currentUser) {
+                // Если пользователь не авторизован, показываем формы логина и регистрации
+                content.innerHTML = `
+                    <div class="login-form">
+                        <h2>Авторизация</h2>
+                        <input type="text" id="login-username" placeholder="Имя пользователя" required />
+                        <input type="password" id="login-password" placeholder="Пароль" required />
+                        <button onclick="login()">Войти</button>
+                    </div>
+                    <div class="register-form">
+                        <h2>Регистрация</h2>
+                        <input type="text" id="register-username" placeholder="Имя пользователя" required />
+                        <input type="password" id="register-password" placeholder="Пароль" required />
+                        <button onclick="register()">Зарегистрироваться</button>
+                    </div>
+                `;
+            } else {
+                // Если пользователь авторизован, показываем посты и форму для добавления нового
+                let postsHtml = posts.map(post => `
+                    <div class="post">
+                        <h2>${post.title}</h2>
+                        <p>${post.content}</p>
+                        <p class="author">Автор: ${post.author}</p>
+                    </div>
+                `).join('');
+
+                const user = users.find(u => u.username === currentUser.username);
+
+                content.innerHTML = `
+                    <div class="profile">
+                        <img src="${user.avatar || 'default-avatar.png'}" alt="Avatar" />
+                        <h2>${user.username}</h2>
+                        <p>${user.bio || 'Описание профиля не указано.'}</p>
+                        <button onclick="editProfile()">Редактировать профиль</button>
+                    </div>
+                    <div class="add-post">
+                        <h2>Добавить пост</h2>
+                        <textarea id="post-content" placeholder="Напишите что-нибудь..." required></textarea>
+                        <button onclick="addPost()">Добавить</button>
+                    </div>
+                    ${postsHtml}
+                `;
+            }
+        }
+
+        // Функция для регистрации нового пользователя
+        function register() {
+            const username = document.getElementById("register-username").value;
+            const password = document.getElementById("register-password").value;
+            if (username && password) {
+                alert("Регистрация прошла успешно! Теперь вы можете войти.");
+                // Для простоты, сразу авторизуем пользователя
+                currentUser = { username };
+                users.push({ username, password, avatar: '', bio: '' });
+                localStorage.setItem("users", JSON.stringify(users)); // Сохраняем пользователей в LocalStorage
+                renderPosts();
+            } else {
+                alert("Пожалуйста, заполните все поля.");
+            }
+        }
+
+        // Функция для авторизации пользователя
+        function login() {
+            const username = document.getElementById("login-username").value;
+            const password = document.getElementById("login-password").value;
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = { username };
+                renderPosts();
+            } else {
+                alert("Неверное имя пользователя или пароль.");
+            }
+        }
+
+        // Функция для добавления нового поста
+        function addPost() {
+            const content = document.getElementById("post-content").value;
+            if (content) {
+                const newPost = {
+                    title: `Новый пост от ${currentUser.username}`,
+                    content: content,
+                    author: currentUser.username
+                };
+                posts.push(newPost);
+                localStorage.setItem("posts", JSON.stringify(posts)); // Сохраняем посты в LocalStorage
+                renderPosts(); // Обновляем список постов
+            } else {
+                alert("Пожалуйста, напишите что-нибудь.");
+            }
+        }
+
+        // Функция для редактирования профиля
+        function editProfile() {
+            const user = users.find(u => u.username === currentUser.username);
+            document.getElementById("content").innerHTML = `
+                <div class="profile-form">
+                    <h2>Редактировать профиль</h2>
+                    <input type="text" id="edit-username" value="${user.username}" disabled />
+                    <textarea id="edit-bio" placeholder="Описание профиля">${user.bio}</textarea>
+                    <input type="file" id="edit-avatar" />
+                    <button onclick="saveProfile()">Сохранить</button>
+                </div>
+            `;
+        }
+
+        // Функция для сохранения изменений в профиле
+        function saveProfile() {
+            const bio = document.getElementById("edit-bio").value;
+            const avatar = document.getElementById("edit-avatar").files[0];
+            const user = users.find(u => u.username === currentUser.username);
+            
+            if (avatar) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    user.avatar = e.target.result; // Загружаем аватар
+                    user.bio = bio; // Сохраняем описание
+                    localStorage.setItem("users", JSON.stringify(users)); // Сохраняем изменения
+                    renderPosts(); // Обновляем страницу
+                };
+                reader.readAsDataURL(avatar);
+            } else {
+                user.bio = bio; // Сохраняем только описание, если аватар не выбран
+                localStorage.setItem("users", JSON.stringify(users)); // Сохраняем изменения
+                renderPosts(); // Обновляем страницу
+            }
+        }
+
+        // Инициализация
+        renderPosts();
+    </script>
+
+</body>
+</html>
